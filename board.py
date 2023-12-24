@@ -1,48 +1,6 @@
-from idlelib.run import exit
 import datetime
-import cython
-from enum import Enum
 
-class Rarity(Enum):
-    BLANK = 0,
-    COMMON = 1,
-    MAGIC = 2,
-    RARE = 3,
-    LEGENDARY = 4,
-    GLYPH = 5
-
-class ParagonNode(object):
-    def __init__(self, parameters=None, rarity:Rarity=None):
-        self.blank = True if (parameters is None and rarity is None) else False
-        self.parameters = parameters
-        self.explored = False
-        self.marked = False
-        self.parent = None  # Use for breadth-first search
-        self.rarity:Rarity = Rarity.BLANK if rarity is None else rarity
-
-    def setNode(self, parameters):
-        if parameters is not None:
-            self.blank = False
-        self.parameters = parameters
-
-    def __str__(self):
-        if self.marked:
-            return 'X'
-        if self.rarity == Rarity.GLYPH:
-            return 'g'
-        elif self.rarity == Rarity.LEGENDARY:
-            return 'l'
-        elif self.rarity == Rarity.RARE:
-            return 'r'
-        elif self.rarity == Rarity.MAGIC:
-            return 'm'
-        elif self.rarity == Rarity.COMMON:
-            return 'c'
-        elif self.rarity == Rarity.BLANK:
-            return 'b'
-        if self.blank:
-            return " "
-        return "_"
+from node import ParagonNode, Rarity
 
 class ParagonBoard(object):
 
@@ -54,7 +12,7 @@ class ParagonBoard(object):
         # Define a rectangular grid with rows and columns.
         self.rows = rows
         self.columns = columns
-        self.cells = [ [ParagonNode() for x in range(columns)] for y in range(rows)] # Make a 2 dimensional array of rows by columns
+        self.cells = [[ParagonNode() for x in range(columns)] for y in range(rows)] # Make a 2 dimensional array of rows by columns
 
         self.entry_points = entry_points
 
@@ -79,7 +37,7 @@ class ParagonBoard(object):
     def __str__(self):
         return self.pretty_print()
 
-    def add_node(self, node:ParagonNode, row:int, column:int):
+    def add_node(self, node: ParagonNode, row:int, column:int):
         # Add a node to the given coordinates. The grid is 0-based
         assert node is not None
         assert row >= 0
@@ -127,7 +85,7 @@ class ParagonBoard(object):
 
         return results
 
-    def get_coordinates(self, node:ParagonNode):
+    def get_coordinates(self, node: ParagonNode):
         for r in range(len(self.cells)):
             for c in range(len(self.cells[r])):
                 if node == self.cells[r][c]:
@@ -142,14 +100,14 @@ class ParagonBoard(object):
                 self.cells[r][c].explored = False
                 self.cells[r][c].parent = None
 
-    def path_length(self, node:ParagonNode):
+    def path_length(self, node: ParagonNode):
         count = -1 # Start at -1 since we dont count ourselves
         while node is not None:
             node = node.parent
             count = count + 1
         return count
 
-    def shortest_path(self, source:ParagonNode, destination:ParagonNode):
+    def shortest_path(self, source: ParagonNode, destination: ParagonNode):
 
         # Reset the board first
         self.reset()
@@ -160,7 +118,7 @@ class ParagonBoard(object):
 
         queue.append(source)
         while len(queue) > 0:
-            v:ParagonNode = queue.pop(0)
+            v: ParagonNode = queue.pop(0)
             if v == destination:
                 temp = v
                 while temp is not None:
@@ -188,69 +146,6 @@ class ParagonBoard(object):
         results = ""
         for item in path:
             results = results + f'{self.get_coordinates(item)} '
-        return results
-
-class ParagonWalk(object):
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def deduplicate_walks(walks):
-
-        results = set()
-        for walk in walks:
-            results.add(frozenset(walk))  # Use a frozenset so that the list is hashable and can be put in a set
-        return list(results)
-
-    @staticmethod
-    def walk(board:ParagonBoard, max_depth=None):
-        assert board is not None
-
-        def walk_helper(board: ParagonBoard, current_coordinates: tuple, previously_visited: list[tuple], existing_neighbors: list[tuple], current_depth, max_depth=None):
-            assert max_depth >= 0
-            assert current_depth >= 0
-
-            walked = []
-
-            if current_depth >= max_depth:
-                return [previously_visited] # Return as a list to represent the whole walk
-
-            new_neighbors = board.get_neighbor_coordinates(current_coordinates[0], current_coordinates[1])
-            new_neighbors.extend(list(existing_neighbors)) # Use any existing neighbors we have as well
-
-            neighbors = []
-            for n in new_neighbors:
-                # This loop is important to remove unneeded nodes to speed up the future recursive calls
-                if n not in previously_visited:
-                    # Only add non-blank nodes and nodes we've not seen before
-                    neighbors.append(n)
-
-            for neighbor in neighbors:
-
-                visited = list(previously_visited)  # Make a copy, not alter the existing one in place
-                visited.append(neighbor)
-
-
-                neighbor_walk = walk_helper(board, neighbor, visited, neighbors, max_depth=max_depth, current_depth=current_depth+1)
-
-                walked.extend(neighbor_walk)
-
-            walked = ParagonWalk.deduplicate_walks(walked)
-            return walked
-
-        # This is the top level walk function that takes a board as input and walks all its entry points
-        results = []
-        for entry_point in board.entry_points:
-            #visited = [entry_point] # Reset the visited list at the entry points
-
-            print(f"[*] Entry point: {entry_point}")
-            results.extend(walk_helper(board, entry_point, [entry_point], board.entry_points, current_depth=1, max_depth=max_depth))
-
-
-        print(f'[*] Found {len(results)} before deduplicating.')
-        print('[*] Deduplicating.')
-        results = ParagonWalk.deduplicate_walks(results)
-
         return results
 
 def build_board():
@@ -317,9 +212,6 @@ def build_board():
     board.add_node(ParagonNode({}, rarity=Rarity.COMMON), 14, 4)
 
     return board
-
-
-
 
 def main():
     print(f"[*] Running main from {__file__}")
