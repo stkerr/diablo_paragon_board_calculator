@@ -165,9 +165,9 @@ class ParagonBoard(object):
                     path_matrix[source][dest] = None
 
                 path_matrix[source][dest] = self.get_path(self.shortest_path(source, dest))
-                print(f'adding path: {path_matrix[source][dest]}')
                 weight_matrix[source][dest] = self.path_length(self.shortest_path(source, dest))
 
+        print("Weight matrix:")
         for source in weight_matrix.keys():
             for dest in weight_matrix[source]:
                 print(f'{weight_matrix[source][dest]} ', end="")
@@ -190,7 +190,6 @@ class ParagonBoard(object):
             # This is extract_min
             dests = queue
             min_node = None
-            print(queue)
             for (k, item) in key.items():
                 if min_node is None or key[min_node] > item:
                     if k in queue:

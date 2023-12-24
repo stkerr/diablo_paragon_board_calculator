@@ -102,8 +102,6 @@ def main():
 
     # Render the results
     (dist, walked) = board.get_minimum_spanning_tree(target_points)
-    for n in walked:
-        print(f'{board.get_coordinates(n)}')
     print(board)
     print(f'Total distance: {dist}')
 
