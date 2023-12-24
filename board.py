@@ -146,3 +146,77 @@ class ParagonBoard(object):
         for item in path:
             results = results + f'{self.get_coordinates(item)} '
         return results
+
+    def get_minimum_spanning_tree(self, target_points: list[ParagonNode]):
+        # Construct a minimum spanning tree
+        # Loosely follows the algorithm in the CLR book
+        # for 3rd edition, page 634
+
+        self.reset()
+
+        import collections
+        weight_matrix = collections.defaultdict(lambda: collections.defaultdict(int))
+        path_matrix = collections.defaultdict(lambda: collections.defaultdict(list))
+
+        for source in target_points:
+            for dest in target_points:
+                if source == dest:
+                    weight_matrix[source][dest] = None
+                    path_matrix[source][dest] = None
+
+                path_matrix[source][dest] = self.get_path(self.shortest_path(source, dest))
+                print(f'adding path: {path_matrix[source][dest]}')
+                weight_matrix[source][dest] = self.path_length(self.shortest_path(source, dest))
+
+        for source in weight_matrix.keys():
+            for dest in weight_matrix[source]:
+                print(f'{weight_matrix[source][dest]} ', end="")
+            print('\n')
+
+        import math
+        key = collections.defaultdict(lambda: math.inf)
+        pi = collections.defaultdict(lambda: None)
+
+        root = target_points[0]
+
+        key[root] = 0
+        queue = list(target_points)
+
+        self.reset()
+
+        root.marked = True
+
+        while queue is not None and len(queue) > 0:
+            # This is extract_min
+            dests = queue
+            min_node = None
+            print(queue)
+            for (k, item) in key.items():
+                if min_node is None or key[min_node] > item:
+                    if k in queue:
+                        min_node = k
+
+            del queue[queue.index(min_node)]
+
+            # This is the algorithm body
+
+            u = min_node
+
+            for v in target_points:  # Probably not right - need adjancency set here. Works ok for now but can be optimized
+                if v in queue and weight_matrix[u][v] < key[v]:
+                    pi[v] = u
+                    key[v] = weight_matrix[u][v]
+
+        # Mark the interim nodes we visited and return the full path
+        walked_path = []
+        total_distance = 0
+        for (k, i) in pi.items():
+            print(f'{k}({self.get_coordinates(k)}) -> {i}({self.get_coordinates(i)})  - {key[k]}')
+            total_distance = total_distance + key[k]
+            path = path_matrix[k][i]
+            walked_path.extend(path_matrix[k][i])
+            for node in path:
+                node.marked = True
+
+
+        return (total_distance, walked_path)
