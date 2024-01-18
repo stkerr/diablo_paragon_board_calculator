@@ -69,10 +69,56 @@ def build_board():
 
     return board
 
+def read_board_file(file_obj):
+    lines = file_obj.readlines()
+    rows = int(lines[0].split('=')[1])
+    columns = int(lines[1].split('=')[1])
+
+    entry_points = []
+    entry_points_pairs = lines[2].split('=')[1].split(';')
+    for pair in entry_points_pairs:
+        (r,c) = pair.split(',')
+        (r,c) = (int(r), int(c))
+        print(f'({r}, {c})')
+        entry_points.append((r,c))
+
+    board = ParagonBoard(entry_points=entry_points, rows=rows, columns=columns)
+
+    current_row = 0
+    for line in lines[3:]:
+        if line == '---\n':
+            continue
+
+        print(f'{current_row}: {line}')
+
+        for i in range(columns):
+            if i >= len(line):
+                break
+
+            if line[i] == 'c':
+                board.add_node(ParagonNode({}, rarity=Rarity.COMMON), current_row, i)
+            if line[i] == 'm':
+                board.add_node(ParagonNode({}, rarity=Rarity.MAGIC), current_row, i)
+            if line[i] == 'r':
+                board.add_node(ParagonNode({}, rarity=Rarity.RARE), current_row, i)
+            if line[i] == 'g':
+                board.add_node(ParagonNode({}, rarity=Rarity.GLYPH), current_row, i)
+
+        current_row = current_row + 1
+
+
+
+    return board
+
+
+
 def main():
     print(f"[*] Running main from {__file__}")
 
-    board = build_board()
+    with open('board_files/initial.board','r') as board_file:
+        board = read_board_file(board_file)
+
+    #board = build_board()
 
     print(board)
 
@@ -97,7 +143,7 @@ def main():
         board.get_node_by_coordinates(3, 6),
         board.get_node_by_coordinates(8, 4),
         board.get_node_by_coordinates(10, 3),
-        board.get_node_by_coordinates(14, 4)
+        board.get_node_by_coordinates(14, 4),
     ]
 
     # Render the results
